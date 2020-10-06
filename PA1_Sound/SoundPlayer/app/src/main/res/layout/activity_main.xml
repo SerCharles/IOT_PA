@@ -20,13 +20,17 @@
             android:id="@+id/select_local"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:onClick="selectAudio"
             android:text="选择本地音频" />
         <Button
             android:id="@+id/record_self"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="录制音频" />
+        <Button
+            android:id="@+id/record_end"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="录制音频结束" />
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content">

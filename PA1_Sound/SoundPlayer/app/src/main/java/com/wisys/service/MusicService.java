@@ -73,11 +73,12 @@ public class MusicService extends Service {
     public void onDestroy() {
         super.onDestroy();
         //先停止 再释放
-        if(mediaPlayer.isPlaying()){
-            mediaPlayer.stop();
+        if(mediaPlayer != null) {
+            if (mediaPlayer.isPlaying()) {
+                mediaPlayer.stop();
+            }
+            mediaPlayer.release();
         }
-        mediaPlayer.release();
-
     }
 
     private void playMedia(String url) {
@@ -89,6 +90,7 @@ public class MusicService extends Service {
         }
         Uri playUri = Uri.parse(url);
         mediaPlayer = MediaPlayer.create(this, playUri);
+        mediaPlayer.start();
     }
 
     private void stopMedia() {
