@@ -7,6 +7,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
+import android.widget.Toast;
 
 import java.io.IOException;
 
@@ -88,9 +89,15 @@ public class MusicService extends Service {
             mediaPlayer.release();
             mediaPlayer = null;
         }
-        Uri playUri = Uri.parse(url);
-        mediaPlayer = MediaPlayer.create(this, playUri);
-        mediaPlayer.start();
+        if(url.length() == 0)
+        {
+            Toast tt = Toast.makeText(this, "未选择正确的本地文件！", Toast.LENGTH_LONG);
+        }
+        else {
+            Uri playUri = Uri.parse(url);
+            mediaPlayer = MediaPlayer.create(this, playUri);
+            mediaPlayer.start();
+        }
     }
 
     private void stopMedia() {

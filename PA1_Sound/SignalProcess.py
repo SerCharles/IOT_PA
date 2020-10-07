@@ -17,6 +17,7 @@ def generate_wave(framerate = 44100, duration = 5, frequency = 2000, start_place
     wf.setnchannels(1)
     wf.setframerate(framerate)
     wf.setsampwidth(sample_width)
+    print(y)
     for i in sine_wave:
         data = struct.pack('<h', int(i))
         wf.writeframesraw(data)
@@ -38,5 +39,5 @@ def load_wave(save_dir = 'sound.wav'):
     plt.xlabel("time (s)")
     plt.show()
 
-generate_wave(framerate = 200)
+generate_wave(frequency = 2000)
 load_wave()

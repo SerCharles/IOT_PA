@@ -6,13 +6,17 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import com.wisys.service.R;
+
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
 import android.provider.MediaStore;
@@ -23,6 +27,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -34,6 +39,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -44,6 +51,13 @@ public class MainActivity extends AppCompatActivity {
 
     //48K采样率
     int SamplingRate = 48000;
+    //时长5s
+    int Duration = 15;
+    //初始相位0
+    double StartPlace = 0;
+    //音量
+    int Volume = 32766;
+
     //格式：双声道
     int channelConfiguration = AudioFormat.CHANNEL_IN_STEREO;
     //16Bit
@@ -52,12 +66,25 @@ public class MainActivity extends AppCompatActivity {
     boolean isRecording = false;
     //每次从audiorecord输入流中获取到的buffer的大小
     int bufferSize = 0;
-
+    int bufferSizeGenerate = 100;
+    int frequency = 0;
     String currentPath = "";
     String currentURI = "";
     TextView the_textview;
-    Button StartRecord, StopRecord, ChooseButton;
+    EditText the_frequency;
+    Button StartRecord, StopRecord, ChooseButton, GenerateButton;
 
+    /**
+     * 通知媒体库更新文件
+     * @param context
+     * @param filePath 文件全路径
+     *
+     * */
+    public void scanFile(Context context, String filePath) {
+        Intent scanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        scanIntent.setData(Uri.fromFile(new File(filePath)));
+        context.sendBroadcast(scanIntent);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,6 +94,8 @@ public class MainActivity extends AppCompatActivity {
         StartRecord = findViewById(R.id.record_self);
         StopRecord = findViewById(R.id.record_end);
         ChooseButton = findViewById(R.id.select_local);
+        the_frequency = findViewById(R.id.frequency);
+        GenerateButton = findViewById(R.id.generate);
         GetPermission();
 
         //完成每个按钮的功能
@@ -86,7 +115,9 @@ public class MainActivity extends AppCompatActivity {
                         //获取此刻的时间
                         Date now = Calendar.getInstance().getTime();
                         //用此刻时间为最终的录音wav文件命名
-                        String filepath =Environment.getExternalStorageDirectory().getAbsolutePath()+"/myrecorder/"+now.toString()+".wav";
+                        String filepath =Environment.getExternalStorageDirectory().getAbsolutePath()+"/record_"+now.toString()+".wav";
+                        scanFile(getApplicationContext(), filepath);
+
                         //把录到的原始数据写入到wav文件中。
                         copyWaveFile(name, filepath);
                     }
@@ -116,6 +147,7 @@ public class MainActivity extends AppCompatActivity {
                 startActivityForResult(intent, 0);
             }
         });
+
 
 
 
@@ -288,17 +320,23 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         // TODO Auto-generated method stub
-        if(resultCode == Activity.RESULT_OK) {
-            Uri uri = data.getData();
-            currentURI = uri.toString();
-            Cursor cur = getContentResolver().query(uri,
-                    null,
-                    null, null, null);
-            int place_path = cur.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME);
-            cur.moveToFirst();
-            currentPath = cur.getString(2);
-            the_textview.setText("当前播放音频位置： " + currentPath);
-            cur.close();
+        try {
+            if (resultCode == Activity.RESULT_OK) {
+                Uri uri = data.getData();
+                currentURI = uri.toString();
+                Cursor cur = getContentResolver().query(uri,
+                        null,
+                        null, null, null);
+                int place_path = cur.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME);
+                cur.moveToFirst();
+                currentPath = cur.getString(2);
+                the_textview.setText("当前播放音频位置： " + currentPath);
+                cur.close();
+            }
+        } catch (Throwable t) {
+            currentURI = "";
+            currentPath = "";
+            Toast tt = Toast.makeText(this, "读取本地文件失败！", Toast.LENGTH_LONG);
         }
     }
 
@@ -344,6 +382,158 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public static byte[] ShortToBytes(short values, ByteOrder byteOrder) {
+        byte[] buffer = new byte[2];
+        for (int i = 0; i < 2; i++) {
+            int intVal = (int) values;
+            byte lowByte = (byte)(intVal & 0xff);
+            int paf = 0x00;
+            if(intVal < 0) paf = 0x80;
+            int pad = ((intVal >>> 7) & 0x7f);
+            byte highByte = (byte)(paf | pad);
+            if(byteOrder == ByteOrder.BIG_ENDIAN){
+                buffer[0] = highByte;
+                buffer[1] = lowByte;
+            }else{
+                buffer[0] = lowByte;
+                buffer[1] = highByte;
+            }
+        }
+        return buffer;
+    }
 
+
+    public void GenerateAudio(View view)
+    {
+        try {
+            String f = the_frequency.getText().toString();
+            frequency = Integer.parseInt(f);
+            if (frequency <= 0) {
+                Exception e = new Exception();
+                throw (e);
+            }
+
+
+
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    //设置用于临时保存录音原始数据的文件的名字
+                    String name = Environment.getExternalStorageDirectory().getAbsolutePath() + "/raw_generate.wav";
+                    //调用开始录音函数，并把原始数据保存在指定的文件中
+                    GenerateWave(name, frequency);
+                    //获取此刻的时间
+                    Date now = Calendar.getInstance().getTime();
+                    //用此刻时间为最终的录音wav文件命名
+                    String filepath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/generate_" + now.toString() + ".wav";
+                    //把录到的原始数据写入到wav文件中。
+                    copyWaveFileGenerate(name, filepath);
+                    scanFile(getApplicationContext(), filepath);
+                }
+            });
+            //开启线程
+            thread.start();
+        }
+        catch(Exception e)
+        {
+            Toast tt = Toast.makeText(this, "频率不合法,需要是正整数！", Toast.LENGTH_LONG);
+        }
+    }
+
+    //生成波
+    public void GenerateWave(String name, int frequency) {
+
+        //生成原始数据文件
+        File file = new File(name);
+        //如果文件已经存在，就先删除再创建
+        if (file.exists())
+            file.delete();
+        try {
+            file.createNewFile();
+        } catch (IOException e) {
+            throw new IllegalStateException("未能创建" + file.toString());
+        }
+        try {
+            //文件输出流
+            OutputStream os = new FileOutputStream(file);
+            BufferedOutputStream bos = new BufferedOutputStream(os);
+            DataOutputStream dos = new DataOutputStream(bos);
+
+
+            //设置用来承接从audiorecord实例中获取的原始数据的数组
+            byte[] buffer = makeSound(SamplingRate, Duration, frequency, StartPlace, Volume);
+            //写文件
+            for (int i = 0; i < SamplingRate * Duration * 2; i++) {
+                dos.write(buffer[i]);
+            }
+
+            dos.close();
+        } catch (Throwable t) {
+            Log.e("MainActivity", "生成音频失败");
+        }
+    }
+
+    /**
+     * 产生余弦波
+     * 直接用三角函数做循环计算，并把算出的结果转为Byte数组
+     */
+    private byte[] makeSound(int framerate, int duration, int frequency, double start_place, int volume)
+    {
+        byte[] result = new byte[framerate * duration * 8];
+        int num = framerate * duration;
+        for(int i = 0; i < num; i ++)
+        {
+            double place = 2 * Math.PI * Double.valueOf(frequency) * Double.valueOf(i) / Double.valueOf(framerate) + start_place;
+            short y = (short) Math.round(Math.sin(place) * volume);
+            byte[] byte_y = ShortToBytes(y, ByteOrder.nativeOrder());
+            for(int j = 0; j < 2; j ++)
+            {
+                result[i * 2 + j] = byte_y[j];
+            }
+        }
+        return result;
+    }
+
+
+    private void copyWaveFileGenerate(String inFileName, String outFileName)
+    {
+        FileInputStream in = null;
+        FileOutputStream out = null;
+        long totalAudioLen = 0;
+        //wav文件比原始数据文件多出了44个字节，除去表头和文件大小的8个字节剩余文件长度比原始数据多36个字节
+        long totalDataLen = totalAudioLen + 36;
+        long longSampleRate = SamplingRate;
+        int channels = 1;
+        //每分钟录到的数据的字节数
+        long byteRate = 16 * SamplingRate * channels / 8;
+
+        byte[] data = new byte[bufferSizeGenerate];
+        try
+        {
+            in = new FileInputStream(inFileName);
+            out = new FileOutputStream(outFileName);
+            //获取真实的原始数据长度
+            totalAudioLen = in.getChannel().size();
+            totalDataLen = totalAudioLen + 36;
+            //为wav文件写文件头
+            WriteWaveFileHeader(out, totalAudioLen, totalDataLen, longSampleRate, channels, byteRate);
+            //把原始数据写入到wav文件中。
+            while(in.read(data) != -1)
+            {
+                out.write(data);
+            }
+            in.close();
+            out.close();
+
+        } catch (FileNotFoundException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
 
 }
