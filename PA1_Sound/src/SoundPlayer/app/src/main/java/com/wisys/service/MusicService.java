@@ -92,6 +92,7 @@ public class MusicService extends Service {
         if(url.length() == 0)
         {
             Toast tt = Toast.makeText(this, "未选择正确的本地文件！", Toast.LENGTH_LONG);
+            tt.show();
         }
         else {
             Uri playUri = Uri.parse(url);

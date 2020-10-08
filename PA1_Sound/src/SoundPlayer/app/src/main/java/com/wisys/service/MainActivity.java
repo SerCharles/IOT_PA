@@ -50,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
     boolean isPause = false;
 
     //48K采样率
-    int SamplingRate = 48000;
+    int SamplingRate = 0;
     //时长5s
     int Duration = 15;
     //初始相位0
@@ -68,23 +68,15 @@ public class MainActivity extends AppCompatActivity {
     int bufferSize = 0;
     int bufferSizeGenerate = 100;
     int frequency = 0;
+    int frequencyDefault = 2000;
     String currentPath = "";
     String currentURI = "";
     TextView the_textview;
     EditText the_frequency;
+    EditText the_sample;
     Button StartRecord, StopRecord, ChooseButton, GenerateButton;
 
-    /**
-     * 通知媒体库更新文件
-     * @param context
-     * @param filePath 文件全路径
-     *
-     * */
-    public void scanFile(Context context, String filePath) {
-        Intent scanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-        scanIntent.setData(Uri.fromFile(new File(filePath)));
-        context.sendBroadcast(scanIntent);
-    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,6 +87,7 @@ public class MainActivity extends AppCompatActivity {
         StopRecord = findViewById(R.id.record_end);
         ChooseButton = findViewById(R.id.select_local);
         the_frequency = findViewById(R.id.frequency);
+        the_sample = findViewById(R.id.sample);
         GenerateButton = findViewById(R.id.generate);
         GetPermission();
 
@@ -102,29 +95,43 @@ public class MainActivity extends AppCompatActivity {
         StartRecord.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //恢复停止录音按钮，并禁用开始录音按钮
-                StopRecord.setEnabled(true);
-                StartRecord.setEnabled(false);
-                Thread thread = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        //设置用于临时保存录音原始数据的文件的名字
-                        String name = Environment.getExternalStorageDirectory().getAbsolutePath()+"/raw.wav";
-                        //调用开始录音函数，并把原始数据保存在指定的文件中
-                        StartRecord(name);
-                        //获取此刻的时间
-                        Date now = Calendar.getInstance().getTime();
-                        //用此刻时间为最终的录音wav文件命名
-                        String filepath =Environment.getExternalStorageDirectory().getAbsolutePath()+"/record_"+now.toString()+".wav";
-                        scanFile(getApplicationContext(), filepath);
-
-                        //把录到的原始数据写入到wav文件中。
-                        copyWaveFile(name, filepath);
+                try {
+                    String f = the_sample.getText().toString();
+                    SamplingRate = Integer.parseInt(f);
+                    if (SamplingRate <= 0) {
+                        Exception e = new Exception();
+                        throw (e);
                     }
-                });
-                //开启线程
-                thread.start();
+                    //恢复停止录音按钮，并禁用开始录音按钮
+                    StopRecord.setEnabled(true);
+                    StartRecord.setEnabled(false);
+                    Thread thread = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            //设置用于临时保存录音原始数据的文件的名字
+                            String name = Environment.getExternalStorageDirectory().getAbsolutePath() + "/raw.wav";
+                            //调用开始录音函数，并把原始数据保存在指定的文件中
+                            StartRecord(name);
+                            //获取此刻的时间
+                            Date now = Calendar.getInstance().getTime();
+                            //用此刻时间为最终的录音wav文件命名
+                            String filepath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/record_" + now.toString() + ".wav";
+                            scanFile(getApplicationContext(), filepath);
+
+                            //把录到的原始数据写入到wav文件中。
+                            copyWaveFile(name, filepath);
+                        }
+                    });
+                    //开启线程
+                    thread.start();
+                }
+                catch(Exception e)
+                {
+                    Toast tt = Toast.makeText(getApplicationContext(), "录音失败！", Toast.LENGTH_LONG);
+                    tt.show();
+                }
             }
+
         });
 
         StopRecord.setOnClickListener(new View.OnClickListener() {
@@ -147,12 +154,82 @@ public class MainActivity extends AppCompatActivity {
                 startActivityForResult(intent, 0);
             }
         });
-
-
-
-
     }
 
+    /**播放器控制函数**/
+    // TODO Method to start the service
+    public void startPlayer(View view) {
+        isPlay = true;
+        Intent intent = new Intent(this, MusicService.class);
+        intent.putExtra("key", "play");
+        intent.putExtra("url", currentURI);
+        startService(intent);
+    }
+    public void stopPlayer(View view) {
+        if(isPlay = true) {
+            isPlay = false;
+            Intent intent = new Intent(this, MusicService.class);
+            intent.putExtra("key", "stop");
+            startService(intent);
+        }
+    }
+
+    // TODO Method to pause the service
+    public void pausePlayer(View view) {
+        if(isPlay == true && isPause == false)
+        {
+            isPause = true;
+            Intent intent = new Intent(this, MusicService.class);
+            intent.putExtra("key", "pause");
+            startService(intent);
+        }
+    }
+
+    public void resumePlayer(View view) {
+        if(isPlay == true && isPause == true)
+        {
+            isPause = false;
+            Intent intent = new Intent(this, MusicService.class);
+            intent.putExtra("key", "resume");
+            startService(intent);
+        }
+    }
+
+    //打开本地文件
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // TODO Auto-generated method stub
+        try {
+            if (resultCode == Activity.RESULT_OK) {
+                Uri uri = data.getData();
+                currentURI = uri.toString();
+                Cursor cur = getContentResolver().query(uri,
+                        null,
+                        null, null, null);
+                int place_path = cur.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME);
+                cur.moveToFirst();
+                currentPath = cur.getString(place_path);
+                the_textview.setText("当前播放音频位置： " + currentPath);
+                cur.close();
+            }
+        } catch (Throwable t) {
+            currentURI = "";
+            currentPath = "";
+            Toast tt = Toast.makeText(this, "读取本地文件失败！", Toast.LENGTH_LONG);
+            tt.show();
+
+        }
+    }
+
+
+
+    /**录音函数**/
+    //通知媒体库更新文件
+    public void scanFile(Context context, String filePath) {
+        Intent scanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        scanIntent.setData(Uri.fromFile(new File(filePath)));
+        context.sendBroadcast(scanIntent);
+    }
 
     private void GetPermission() {
 
@@ -165,7 +242,6 @@ public class MainActivity extends AppCompatActivity {
                         PackageManager.PERMISSION_GRANTED
         )
         {
-
             ActivityCompat.requestPermissions(this,
                     new String[]{android.Manifest.permission.RECORD_AUDIO,
                             android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
@@ -214,9 +290,12 @@ public class MainActivity extends AppCompatActivity {
             audioRecord.stop();
             dos.close();
         } catch (Throwable t) {
-            Log.e("MainActivity", "录音失败");
+            Toast tt = Toast.makeText(this, "录音失败！", Toast.LENGTH_LONG);
+            tt.show();
         }
     }
+
+    //复制录音文件
     private void copyWaveFile(String inFileName, String outFileName)
     {
         FileInputStream in = null;
@@ -258,6 +337,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    //音频文件头
     private void WriteWaveFileHeader(FileOutputStream out, long totalAudioLen,
                                      long totalDataLen, long longSampleRate, int channels, long byteRate)
             throws IOException {
@@ -316,71 +396,9 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    //TODO
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        // TODO Auto-generated method stub
-        try {
-            if (resultCode == Activity.RESULT_OK) {
-                Uri uri = data.getData();
-                currentURI = uri.toString();
-                Cursor cur = getContentResolver().query(uri,
-                        null,
-                        null, null, null);
-                int place_path = cur.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME);
-                cur.moveToFirst();
-                currentPath = cur.getString(2);
-                the_textview.setText("当前播放音频位置： " + currentPath);
-                cur.close();
-            }
-        } catch (Throwable t) {
-            currentURI = "";
-            currentPath = "";
-            Toast tt = Toast.makeText(this, "读取本地文件失败！", Toast.LENGTH_LONG);
-        }
-    }
 
 
 
-    // TODO Method to start the service
-    public void startPlayer(View view) {
-        isPlay = true;
-        Intent intent = new Intent(this, MusicService.class);
-        intent.putExtra("key", "play");
-        intent.putExtra("url", currentURI);
-        startService(intent);
-    }
-    public void stopPlayer(View view) {
-        if(isPlay = true) {
-            isPlay = false;
-            Intent intent = new Intent(this, MusicService.class);
-            intent.putExtra("key", "stop");
-            startService(intent);
-        }
-    }
-
-    // TODO Method to pause the service
-    public void pausePlayer(View view) {
-        if(isPlay == true && isPause == false)
-        {
-            isPause = true;
-            Intent intent = new Intent(this, MusicService.class);
-            intent.putExtra("key", "pause");
-            startService(intent);
-        }
-
-
-    }
-
-    public void resumePlayer(View view) {
-        if(isPlay == true && isPause == true)
-        {
-            isPause = false;
-            Intent intent = new Intent(this, MusicService.class);
-            intent.putExtra("key", "resume");
-            startService(intent);
-        }
-    }
 
     public static byte[] ShortToBytes(short values, ByteOrder byteOrder) {
         byte[] buffer = new byte[2];
@@ -412,7 +430,12 @@ public class MainActivity extends AppCompatActivity {
                 Exception e = new Exception();
                 throw (e);
             }
-
+            String ff = the_sample.getText().toString();
+            SamplingRate = Integer.parseInt(ff);
+            if (SamplingRate <= 0) {
+                Exception e = new Exception();
+                throw (e);
+            }
 
 
             Thread thread = new Thread(new Runnable() {
@@ -437,6 +460,8 @@ public class MainActivity extends AppCompatActivity {
         catch(Exception e)
         {
             Toast tt = Toast.makeText(this, "频率不合法,需要是正整数！", Toast.LENGTH_LONG);
+            tt.show();
+
         }
     }
 
@@ -494,7 +519,7 @@ public class MainActivity extends AppCompatActivity {
         return result;
     }
 
-
+    //复制波形代码
     private void copyWaveFileGenerate(String inFileName, String outFileName)
     {
         FileInputStream in = null;

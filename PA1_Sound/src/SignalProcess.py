@@ -39,5 +39,5 @@ def load_wave(save_dir = 'sound.wav'):
     plt.xlabel("time (s)")
     plt.show()
 
-generate_wave(frequency = 2000)
+generate_wave(frequency = 20)
 load_wave()
