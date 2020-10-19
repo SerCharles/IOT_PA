@@ -20,7 +20,7 @@ def DFT(N,  wave_y):
             amplitude = result_base * param
             amplitude_list[i] += amplitude
     for i in range(N):
-        spectrum_list[i] = amplitude_list[i] ** 2
+        spectrum_list[i] = amplitude_list[i].real ** 2 + amplitude_list[i].imag ** 2 
     return amplitude_list, spectrum_list
 
 

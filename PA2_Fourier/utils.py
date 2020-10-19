@@ -32,15 +32,30 @@ def sine_wave(N):
 
 def load_wave(save_dir = 'sound.wav'):
     file = wave.open(save_dir)
-    for item in enumerate(file.getparams()):
-        print(item)
     n_frames = file.getparams().nframes  # 帧总数
     framerate = file.getparams().framerate  # 采样频率
     sample_time = 1 / framerate  # 采样点的时间间隔
     duration = n_frames / framerate  # 声音信号的长度
+
     frequency, audio_sequence = wavfile.read(save_dir)
     x_seq = np.arange(0, duration, sample_time)
+    print("n_frames:", n_frames)
+    print("framerate:", framerate)
+    print("sample_time:", sample_time)
+    print("duration:", duration)
+    print("frequency:", frequency)
     return x_seq, audio_sequence
+
+def add_zero(x, y):
+    n_frames = x.shape[0]
+    sample_time = (x[n_frames - 1] - x[0]) / (n_frames - 1)
+    duration = n_frames * sample_time
+    new_duration = duration * 10
+    new_x = np.arange(0, new_duration, sample_time)
+    new_y = np.zeros(n_frames * 10)
+    for i in range(n_frames):
+        new_y[i] = y[i]
+    return new_x, new_y
 
 def plot_wave(x, y):
     plt.plot(x, y, 'blue')
