@@ -1,5 +1,6 @@
 import os
 import argparse
+import numpy as np
 from utils import *
 from DFT import *
 
@@ -31,13 +32,9 @@ def show_spectrum():
     else: 
         return
 
-
     amplitude_np = np.fft.fft(y)
-    spectrum_np = np.zeros(y.shape[0])
-    for i in range(y.shape[0]):
-        spectrum_np[i] = amplitude_np[i].real ** 2 + amplitude_np[i].imag ** 2
-    amplitude_mine, spectrum_mine = DFT(y)
-    plot_comparison(x, y, amplitude_np, spectrum_np, amplitude_mine, spectrum_mine)
+    amplitude_mine = DFT(y)
+    plot_comparison(x, y, amplitude_np, amplitude_mine)
 
-
-show_spectrum()
+if __name__ == "__main__":
+    show_spectrum()

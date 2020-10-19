@@ -58,61 +58,52 @@ def add_zero(x, y):
     return new_x, new_y
 
 def plot_frequency(amp):
+    n_frames = amp.shape[0]
+    amp = amp[0:n_frames // 2]
     plt.plot(amp, 'blue')
     plt.xlabel("frequency")
     plt.show()
 
-def plot_comparison(x, y, amplitude_np, spectrum_np, amplitude_mine, spectrum_mine):
+def plot_comparison(x, y, amplitude_np, amplitude_mine):
+    n_frames = amplitude_np.shape[0]
+    amplitude_np = amplitude_np[0:n_frames // 2]
+    amplitude_mine = amplitude_mine[0:n_frames // 2]
+
     plt.suptitle("Plot wave and its DFT")
     plt.subplots_adjust(hspace = 0.6, wspace = 0.2)
-    plt.subplot(3, 2, 1)
+    plt.subplot(2, 2, 1)
     plt.plot(x, y, 'blue')
     plt.title("the wave itself")
 
-    plt.subplot(3, 2, 3)
+    plt.subplot(2, 2, 3)
     plt.plot(np.abs(amplitude_np))
     plt.title("amplitude by numpy")
 
-    plt.subplot(3, 2, 5)
-    plt.plot(np.abs(spectrum_np))
-    plt.title("spectrum by numpy")
-
-    plt.subplot(3, 2, 4)
+    plt.subplot(2, 2, 4)
     plt.plot(np.abs(amplitude_mine))
     plt.title("amplitude by myself")
-
-    plt.subplot(3, 2, 6)
-    plt.plot(np.abs(spectrum_mine))
-    plt.title("spectrum by myself")
     plt.show()
 
-def plot_filter(x, amplitude_old, spectrum_old, amplitude_new, spectrum_new):
+def plot_filter(x, amplitude_old, amplitude_new):
     n_frames = x.shape[0]
+    new_n_frames = amplitude_new.shape[0]
     sample_time = (x[n_frames - 1] - x[0]) / (n_frames - 1)
     framerate = 1 / sample_time
-    old_x = np.arange(0, framerate, framerate / n_frames)[: n_frames]
-    new_x = np.arange(0, framerate, framerate / amplitude_new.shape[0])[:amplitude_new.shape[0]]
-    print(amplitude_new.shape[0], new_x.shape)
+    old_x = np.arange(0, framerate, framerate / n_frames)[: n_frames // 2]
+    new_x = np.arange(0, framerate, framerate / new_n_frames)[: new_n_frames // 2]
+    amplitude_old = amplitude_old[:n_frames // 2]
+    amplitude_new = amplitude_new[:new_n_frames // 2]
+
 
     plt.suptitle("Plot old wave and new wave")
     plt.subplots_adjust(hspace = 0.6, wspace = 0.2)
-    plt.subplot(2, 2, 1)
+    plt.subplot(1, 2, 1)
     plt.plot(old_x, np.abs(amplitude_old))
     plt.xlabel("frequency")
     plt.title("amplitude of original wave")
 
-    plt.subplot(2, 2, 3)
-    plt.plot(old_x, np.abs(spectrum_old))
-    plt.xlabel("frequency")
-    plt.title("spectrum of original wave")
-
-    plt.subplot(2, 2, 2)
+    plt.subplot(1, 2, 2)
     plt.plot(new_x, np.abs(amplitude_new))
     plt.xlabel("frequency")
     plt.title("amplitude of filted wave")
-
-    plt.subplot(2, 2, 4)
-    plt.plot(new_x, np.abs(spectrum_new))
-    plt.xlabel("frequency")
-    plt.title("spectrum of filted wave")
     plt.show()

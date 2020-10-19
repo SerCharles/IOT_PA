@@ -19,16 +19,10 @@ def show_spectrum():
         result = bandpass(x, y)
 
     amplitude_old = np.fft.fft(y)
-    spectrum_old = np.zeros(y.shape[0])
-    for i in range(y.shape[0]):
-        spectrum_old[i] = amplitude_old[i].real ** 2 + amplitude_old[i].imag ** 2
-
     amplitude_new = np.fft.fft(result)
-    spectrum_new = np.zeros(result.shape[0])
-    for i in range(result.shape[0]):
-        spectrum_new[i] = amplitude_new[i].real ** 2 + amplitude_new[i].imag ** 2
 
-    plot_filter(x, amplitude_old, spectrum_old, amplitude_new, spectrum_new)
+
+    plot_filter(x, amplitude_old, amplitude_new)
 
 
 show_spectrum()

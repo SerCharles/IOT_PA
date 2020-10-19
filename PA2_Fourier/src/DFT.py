@@ -7,11 +7,10 @@ def DFT(wave_y):
     '''
     描述：DFT
     参数：波的y
-    返回：频谱的amplitude, spectrum
+    返回：频谱的amplitude
     '''
     N = wave_y.shape[0]
     amplitude_list = np.zeros(N, dtype = complex)
-    spectrum_list = np.zeros(N)
 
     for i in range(N):
         for j in range(N):
@@ -21,9 +20,8 @@ def DFT(wave_y):
             result_base = complex(math.cos(base), math.sin(base))
             amplitude = result_base * param
             amplitude_list[i] += amplitude
-    for i in range(N):
-        spectrum_list[i] = amplitude_list[i].real ** 2 + amplitude_list[i].imag ** 2 
-    return amplitude_list, spectrum_list
+
+    return amplitude_list
 
 def STFT(wave_y, window):
     '''
