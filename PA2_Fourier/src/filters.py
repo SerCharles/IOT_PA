@@ -40,5 +40,4 @@ def bandpass(x, y):
 
     filter_1 = signal.filtfilt(b_1, a_1, y) 
     filter_2 = signal.filtfilt(b_2, a_2, y)
-    filter_result = (filter_1 + filter_2) / 2
-    return filter_result 
+    return filter_1, filter_2 

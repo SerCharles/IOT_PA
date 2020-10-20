@@ -15,14 +15,17 @@ def show_spectrum():
 
     if args.type == 'moving_average':
         result = moving_average(y, args.window)
+        amplitude_old = np.fft.fft(y)
+        amplitude_new = np.fft.fft(result)
+        plot_filter(x, amplitude_old, amplitude_new)
     elif args.type == 'bandpass':
-        result = bandpass(x, y)
+        result_1, result_2 = bandpass(x, y)
+        amplitude_old = np.fft.fft(y)
+        amplitude_new_1 = np.fft.fft(result_1)
+        amplitude_new_2 = np.fft.fft(result_2)
+        plot_filter(x, amplitude_old, amplitude_new_1)
+        plot_filter(x, amplitude_old, amplitude_new_2)
 
-    amplitude_old = np.fft.fft(y)
-    amplitude_new = np.fft.fft(result)
-
-
-    plot_filter(x, amplitude_old, amplitude_new)
 
 
 show_spectrum()

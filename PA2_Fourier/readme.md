@@ -1,5 +1,9 @@
 ## 复现方法
 
+本次作业我使用python3+numpy+wave+scipy库完成，直接在src目录下运行即可，有缺包请用pip/conda直接安装。
+
+**要求src/res文件夹里有res1.wav和res2.wav**
+
 ## 1.傅里叶变换
 
 ### 1.1 对给定的函数进行DFT
@@ -59,6 +63,8 @@ python Filt.py --type=moving_average --window=16
 ```
 
 ### 2.2 带通滤波
+
+要求res2.wav在代码根目录下res文件夹内（我提交的格式）
 
 ```shell
 python Filt.py --place=res2 --type=bandpass

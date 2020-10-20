@@ -31,6 +31,11 @@ def sine_wave(N):
     return my_x, my_wave
 
 def load_wave(save_dir = 'sound.wav'):
+    '''
+    描述：读取波形
+    参数：波形所在位置
+    返回：波形的x，y
+    '''
     file = wave.open(save_dir)
     n_frames = file.getparams().nframes  # 帧总数
     framerate = file.getparams().framerate  # 采样频率
@@ -47,6 +52,11 @@ def load_wave(save_dir = 'sound.wav'):
     return x_seq, audio_sequence
 
 def add_zero(x, y):
+    '''
+    描述：补十倍0
+    参数：原来的x，y
+    返回：补0后的x，y
+    '''
     n_frames = x.shape[0]
     sample_time = (x[n_frames - 1] - x[0]) / (n_frames - 1)
     duration = n_frames * sample_time
@@ -58,6 +68,9 @@ def add_zero(x, y):
     return new_x, new_y
 
 def plot_frequency(amp):
+    '''
+    描述：绘制频谱图，截断了后一半
+    '''
     n_frames = amp.shape[0]
     amp = amp[0:n_frames // 2]
     plt.plot(amp, 'blue')
@@ -65,6 +78,10 @@ def plot_frequency(amp):
     plt.show()
 
 def plot_comparison(x, y, amplitude_np, amplitude_mine):
+    '''
+    描述：绘制频谱图，截断了后一半
+    参数：x，y，numpy FFT生成的频谱图，我自己DFT生成的频谱图
+    '''
     n_frames = amplitude_np.shape[0]
     amplitude_np = amplitude_np[0:n_frames // 2]
     amplitude_mine = amplitude_mine[0:n_frames // 2]
@@ -85,6 +102,10 @@ def plot_comparison(x, y, amplitude_np, amplitude_mine):
     plt.show()
 
 def plot_filter(x, amplitude_old, amplitude_new):
+    '''
+    描述：绘制滤波前后的结果，截断了后一半
+    参数：x，旧频谱图，新频谱图
+    '''
     n_frames = x.shape[0]
     new_n_frames = amplitude_new.shape[0]
     sample_time = (x[n_frames - 1] - x[0]) / (n_frames - 1)
