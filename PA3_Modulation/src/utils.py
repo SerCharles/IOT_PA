@@ -1,6 +1,7 @@
 import wave
 import os
 import numpy as np
+import random
 from scipy.io import wavfile
 import struct
 import matplotlib.pyplot as plt
@@ -19,7 +20,7 @@ def save_wave(my_wave, framerate = 44100, sample_width = 2, nchannels = 1, save_
     wf.setframerate(framerate)
     wf.setsampwidth(sample_width)
     for i in range(len(my_wave)):
-        the_result = int(my_wave[i])
+        the_result = int(1000 * my_wave[i]) #*/1000，否则信息会有丢失
         data = struct.pack('<h', the_result)
         wf.writeframesraw(data)
     wf.close()
@@ -45,7 +46,8 @@ def load_wave(save_base = 'sound', file_name = 'pulse.wav'):
     print("sample_time:", sample_time)
     print("duration:", duration)
     print("frequency:", frequency)
-    return audio_sequence
+    y = audio_sequence / 1000  #*/1000，否则信息会有丢失
+    return y
 
 def bandpass(y, framerate, low, high):
     '''
@@ -91,3 +93,40 @@ def moving_average(wave_y, window = 11):
         average = the_sum / window
         result_y[i] = average
     return result_y
+
+def generate_random_seq(length):
+    '''
+    描述：生成随机0-1序列
+    参数：长度
+    返回：随机0-1序列
+    '''
+    original_seq = []
+    for i in range(length):
+        num = round(random.random())
+        original_seq.append(num)
+    return original_seq
+
+def fill_seq(seq):
+    '''
+    描述：如果seq长度不是偶数，补0
+    参数：原先seq
+    返回：新seq
+    '''
+    if len(seq) % 2 == 0:
+        return seq
+    else: 
+        seq.append(0)
+        return seq
+
+def compare_seqs(original_seq, get_seq):
+    '''
+    描述：比较两个seq是否一样
+    参数：原先和获取的seq
+    返回：正确/错误
+    '''
+    if len(original_seq) != len(get_seq):
+        return False
+    for i in range(len(original_seq)):
+        if original_seq[i] != get_seq[i]:
+            return False
+    return True
