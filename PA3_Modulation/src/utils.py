@@ -130,3 +130,18 @@ def compare_seqs(original_seq, get_seq):
         if original_seq[i] != get_seq[i]:
             return False
     return True
+
+def get_success_rate(original_seq, get_seq):
+    '''
+    描述：计算传输准确率
+    参数：原先和获取的seq
+    返回：准确率
+    '''
+    low_len = min(len(original_seq), len(get_seq))
+    high_len = max(len(original_seq), len(get_seq))
+    correct_num = 0
+    for i in range(low_len):
+        if original_seq[i] == get_seq[i]:
+            correct_num += 1
+    accuracy = correct_num / high_len
+    return accuracy

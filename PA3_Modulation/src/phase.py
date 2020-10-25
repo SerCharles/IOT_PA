@@ -78,7 +78,7 @@ def get_integral(type, sub_seq, frequency, framerate, interval, volume):
     else: 
         y = np.sin(2 * np.pi * x * frequency) * volume
     for i in range(total_num):
-        the_sum += sub_seq[i] * y[i] / framerate
+        the_sum += sub_seq[i] * y[i] / framerate * 2 / interval / frequency
     return the_sum
 
 def get_original_seq(seq_i, seq_q):
