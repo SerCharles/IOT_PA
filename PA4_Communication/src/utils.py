@@ -35,7 +35,7 @@ def decode(s):
     '''
     my_str = ''
     i = 0
-    while i < len(s):
+    while i + 8 <= len(s):
         current = s[i: i + 8]
         my_sum = s[0] << 7 + s[1] << 6 + s[2] << 5 + s[3] << 4 + s[4] << 3 + s[5] << 2 + s[6] << 1 + s[7] << 0
         my_char = chr(my_sum)
@@ -58,7 +58,8 @@ def init_params():
     parser.add_argument("--volume", type = float, default = 1.0)
     parser.add_argument("--start_place", type = int, default = 0)
     parser.add_argument("--interval", type = float, default = 0.025)
-    parser.add_argument("--save_base", type = str, default = 'sound')
+    parser.add_argument("--save_base_send", type = str, default = 'send')
+    parser.add_argument("--save_base_receive", type = str, default = 'receive')
     args = parser.parse_args()
     return args
 
