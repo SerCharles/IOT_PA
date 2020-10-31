@@ -3,7 +3,7 @@ from tkinter import *
 import tkinter.messagebox
 import hashlib
 import time
-from phase import phase_modulation, phase_demodulation
+from pulse import pulse_modulation, pulse_demodulation
 from utils import save_wave, load_wave, fill_seq, compare_seqs, generate_random_seq, get_success_rate, init_params, encode, decode
 
 
@@ -27,12 +27,13 @@ class Sender:
             return
         try:
             original_seq = encode(seq)
+            original_seq = [0, 0, 0, 0, 0] + original_seq
             save_place += '.wav'
             print("The original seq is:\n", original_seq)
         except:
             tkinter.messagebox.showinfo('错误','待传输信息不合法！')
             return
-        the_wave = phase_modulation(original_seq, self.args)
+        the_wave = pulse_modulation(original_seq, self.args)
         save_wave(the_wave, framerate = self.args.framerate, sample_width = self.args.sample_width, nchannels = self.args.nchannels, save_base = self.args.save_base_send, file_name = save_place)
         self.window.destroy()
 

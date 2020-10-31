@@ -7,8 +7,8 @@ import os
 import pyaudio
 import wave
 import threading
-from phase import phase_modulation, phase_demodulation
-from utils import save_wave, load_wave, fill_seq, compare_seqs, generate_random_seq, get_success_rate, init_params, encode, decode
+from pulse import pulse_modulation, pulse_demodulation
+from utils import save_wave, load_wave, fill_seq, bandpass, compare_seqs, generate_random_seq, get_success_rate, init_params, encode, decode, filt_wave
 
 
 class Receiver:
@@ -83,7 +83,10 @@ class Receiver:
         返回：无
         '''
         get_wave = load_wave(save_base = args.save_base_receive, file_name = self.save_place)
-        get_seq = phase_demodulation(get_wave, args)
+        get_wave = bandpass(get_wave, self.args.framerate, self.args.frequency - 500, self.args.frequency + 500)
+        #get_wave = filt_wave(get_wave)
+        get_seq = pulse_demodulation(get_wave, args)
+        print(get_seq)
         result = decode(get_seq)
         tkinter.messagebox.showinfo('传输结果', result)
         

@@ -18,7 +18,6 @@ def encode(s):
         the_ord = ord(i)
         if the_ord < 0 or the_ord >= 128:
             raise Exception
-        a.append((the_ord >> 7) & 1)
         a.append((the_ord >> 6) & 1)
         a.append((the_ord >> 5) & 1)
         a.append((the_ord >> 4) & 1)
@@ -34,14 +33,25 @@ def decode(s):
     二进制转字符串
     '''
     my_str = ''
-    i = 0
-    while i + 8 <= len(s):
-        current = s[i: i + 8]
-        my_sum = s[0] << 7 + s[1] << 6 + s[2] << 5 + s[3] << 4 + s[4] << 3 + s[5] << 2 + s[6] << 1 + s[7] << 0
+    i = len(s)
+    while i - 7 >= 0:
+        current = s[i - 7: i]
+        my_sum = current[0] * 64 + current[1] * 32 + current[2] * 16 + current[3] * 8 + current[4] * 4 + current[5] * 2 + current[6] * 1
         my_char = chr(my_sum)
         my_str += my_char
-        i += 8
+        i -= 7
+    my_str = my_str[::-1]
     return my_str
+
+def filt_wave(s):
+    '''
+    录音时去除振幅太小的部分
+    '''
+    new_s = []
+    for item in s:
+        if abs(item) >= 0.01:
+            new_s.append(item)
+    return new_s 
 
 
 def init_params():
@@ -52,12 +62,14 @@ def init_params():
     '''
     parser = argparse.ArgumentParser(description="Choose the parameters")
     parser.add_argument("--framerate", type = int, default = 48000)
-    parser.add_argument("--frequency", type = int, default = 20000)
+    parser.add_argument("--frequency", type = int, default = 10000)
     parser.add_argument("--sample_width", type = int, default = 2)
     parser.add_argument("--nchannels", type = int, default = 1)
-    parser.add_argument("--volume", type = float, default = 1.0)
+    parser.add_argument("--volume", type = float, default = 10000.0)
     parser.add_argument("--start_place", type = int, default = 0)
-    parser.add_argument("--interval", type = float, default = 0.025)
+    parser.add_argument("--pulse_length", type = float, default = 0.01)
+    parser.add_argument("--interval_0", type = float, default = 0.01)
+    parser.add_argument("--interval_1", type = float, default = 0.02)
     parser.add_argument("--save_base_send", type = str, default = 'send')
     parser.add_argument("--save_base_receive", type = str, default = 'receive')
     args = parser.parse_args()
@@ -75,7 +87,7 @@ def save_wave(my_wave, framerate = 44100, sample_width = 2, nchannels = 1, save_
     wf.setframerate(framerate)
     wf.setsampwidth(sample_width)
     for i in range(len(my_wave)):
-        the_result = int(1000 * my_wave[i]) #*/1000，否则信息会有丢失
+        the_result = int(my_wave[i]) #*/1000，否则信息会有丢失
         data = struct.pack('<h', the_result)
         wf.writeframesraw(data)
     wf.close()
@@ -101,7 +113,7 @@ def load_wave(save_base = 'sound', file_name = 'pulse.wav'):
     print("sample_time:", sample_time)
     print("duration:", duration)
     print("frequency:", frequency)
-    y = audio_sequence / 1000  #*/1000，否则信息会有丢失
+    y = audio_sequence  #*/1000，否则信息会有丢失
     return y
 
 def bandpass(y, framerate, low, high):
