@@ -5,7 +5,6 @@ import numpy as np
 import random
 from scipy.io import wavfile
 import struct
-from binascii import *
 import matplotlib.pyplot as plt
 from scipy import signal
 
